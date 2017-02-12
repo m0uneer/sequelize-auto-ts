@@ -8,9 +8,7 @@
 //
 ////////////////////////////////////////////////////////////////////
 
-/// <reference path="../typings/bluebird/bluebird.d.ts" />
-/// <reference path="../typings/node/node.d.ts" />
-/// <reference path="./sequelize.d.ts" />
+import sequelize from 'sequelize';
 
 import types = require('./sequelize-types'); // important so we can use same fully qualified names in all generated files
 
@@ -23,6 +21,11 @@ import types = require('./sequelize-types'); // important so we can use same ful
 /*__ignore__*/ export interface __idFieldNameTitleCase__ {}
 
 var asserters:{[typeName:string]:(pojo:any, allowUndefined?:boolean) => void} = {};
+
+export interface generatedModels
+{
+    /*__each__ tables */ __tableNameSingularCamel__:types.__tableName__Model;
+}
 
 /*__startEach__ tables */
 
@@ -40,7 +43,7 @@ export interface __tableNameSingular__Pojo
     /*__each__ fields */ __fieldName__?:__customFieldType__;
 }
 
-export interface __tableNameSingular__Instance extends sequelize.Instance<__tableNameSingular__Instance, __tableNameSingular__Pojo>, __tableNameSingular__Pojo { }
+export interface __tableNameSingular__Instance extends sequelize.Instance<__tableNameSingular__Instance>, __tableNameSingular__Pojo { }
 
 export interface __tableName__Model extends sequelize.Model<__tableNameSingular__Instance, __tableNameSingular__Pojo> {
     get__tableNameSingular__(__idFieldName__:__idFieldNameTitleCase__):Promise<__tableNameSingular__Instance>;
@@ -216,5 +219,5 @@ export interface Reference {
     tableName:string;
     primaryKey:string;
     foreignKey:string;
-    as:string;
+    as:string | undefined;
 }

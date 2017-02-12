@@ -8,15 +8,14 @@
 //
 ////////////////////////////////////////////////////////////////////
 
-/// <reference path='../typings/node/node.d.ts' />
-/// <reference path='./sequelize.d.ts' />
+import sequelize from 'sequelize';
 
 import types = require('./sequelize-types');
 
-var Sequelize:sequelize.SequelizeStatic = require('sequelize');
+const Sequelize:sequelize.SequelizeStatic = sequelize;
 
-/*__ignore__*/ var __defineFieldType__;
-/*__ignore__*/ var __associationNameQuoted__:string;
+/*__ignore__*/ let __defineFieldType__;
+/*__ignore__*/ let __associationNameQuoted__:string;
 
 export class Models {
 
@@ -30,10 +29,10 @@ export class Models {
     /*__ignore__*/ __firstTableNameCamel__:sequelize.Model<any, any>;
     /*__ignore__*/ __secondTableNameCamel__:sequelize.Model<any, any>;
 
-    constructor(database:string, username:string, password:string, options:sequelize.SequelizeOptions) {
+    constructor(database:string, username:string, password:string, options:sequelize.Options) {
 
         this.SEQUELIZE = new Sequelize(database, username, password, options);
-        var self:Models = this;
+        const self:Models = this;
 
         /*__startEach__ tables */
 
@@ -44,8 +43,8 @@ export class Models {
                 timestamps: false,
                 classMethods: {
                     get__tableNameSingular__: (__tableNameSingularCamel__:any) => {
-                        var where:{[key:string]:any} = {};
-                        var id:number = parseInt(__tableNameSingularCamel__);
+                        const where:{[key:string]:any} = {};
+                        const id:number = parseInt(__tableNameSingularCamel__);
                         if (isNaN(id)) {
                             /*__each__ realDbFields */ if (__tableNameSingularCamel__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingularCamel__['__fieldName__']}
                         } else {
@@ -82,11 +81,11 @@ interface ModelCache {
     lastRetrieved:Date;
 }
 
-var modelsCache:{[key:string]: ModelCache} = {};
+let modelsCache:{[key:string]: ModelCache} = {};
 
-export function forDatabase(database:string, username?:string, password?:string, options?:sequelize.SequelizeOptions):Models {
+export function forDatabase(database:string, username?:string, password?:string, options?:sequelize.Options):Models {
 
-    var cache:ModelCache = modelsCache[database];
+    let cache:ModelCache = modelsCache[database];
     if (cache !== undefined) {
         cache.lastRetrieved = new Date();
         return cache.models;
@@ -119,10 +118,10 @@ export function clearDatabase(database:string):void {
 }
 
 export function clearNotUsedSince(date:Date):void {
-    var time:number = date.getTime();
+    const time:number = date.getTime();
 
-    var allKeys:string[] = Object.keys(modelsCache);
-    var clearKeys:string[] = allKeys.filter(key => modelsCache[key].lastRetrieved.getTime() < time);
+    const allKeys:string[] = Object.keys(modelsCache);
+    const clearKeys:string[] = allKeys.filter(key => modelsCache[key].lastRetrieved.getTime() < time);
 
     if (clearKeys.length === 0) {
         return;

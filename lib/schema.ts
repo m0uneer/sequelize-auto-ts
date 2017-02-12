@@ -3,14 +3,13 @@
  * Loads and exposes schema from database
  */
 
-/// <reference path="../typings/node/node.d.ts" />
-/// <reference path="./sequelize.d.ts" />
+import sequelize from 'sequelize';
+import * as fs from 'fs';
 
 import util = require('./util');
 
-var Sequelize:sequelize.SequelizeStatic = require("sequelize");
-import fs = require('fs');
-var _:sequelize.Lodash = Sequelize.Utils._;
+const Sequelize:sequelize.SequelizeStatic = sequelize;
+const _:sequelize.SequelizeLoDash = Sequelize.Utils._;
 
 export class Schema {
 
@@ -108,9 +107,9 @@ export class Schema {
     };
 
     public uniqueReferences():Reference[] {
-        var u:Reference[] = [];
+        const u:Reference[] = [];
 
-        var foundIds:_.Dictionary<boolean> = {};
+        const foundIds:_.Dictionary<boolean> = {};
 
         this.references.forEach(addReferenceIfUnique);
 
@@ -132,14 +131,14 @@ export class Schema {
             if (table.isView || table.tableName.substr(0,4) === 'Xref') {
                 return;
             }
-            var pk:Field = table.fields[0];
+            const pk:Field = table.fields[0];
 
             if (foundIds[pk.fieldName]) {
                 return;
             }
             foundIds[pk.fieldName] = true;
 
-            var r:Reference = new Reference(table.tableName,
+            const r:Reference = new Reference(table.tableName,
                                             table.tableName,
                                             undefined,
                                             pk.fieldName,
@@ -163,11 +162,16 @@ export class Table
 
     public tableNameSingular():string
     {
-        return Sequelize.Utils.singularize(this.tableName, "en");
+        return Sequelize.Utils.singularize(this.tableName);
+    }
+
+    public tableNameUpperCase():string
+    {   
+        return toUpperCase(this.tableNameSingular());
     }
 
     public tableNameSingularCamel():string
-    {
+    {   
         return toCamelCase(this.tableNameSingular());
     }
 
@@ -182,14 +186,14 @@ export class Table
     }
 
     public realDbFields():Field[] {
-        return this.fields.filter(f => !f.isReference && !f.isCalculated);
+        return this.fields.filter(f => !f.referencedCol && !f.isCalculated);
     }
     idField():Field {
         return _.find(this.fields, f => f.isIdField());
     }
 
     idFieldName():string {
-        var idField:Field = this.idField();
+        const idField:Field = this.idField();
         if (idField === undefined) {
             console.log('Unable to find ID field for type: ' + this.tableName);
             return '!!cannotFindIdFieldOn' + this.tableName + '!!';
@@ -198,7 +202,7 @@ export class Table
     }
 
     idFieldNameTitleCase():string {
-        var idField:Field = this.idField();
+        const idField:Field = this.idField();
         if (idField === undefined) {
             console.log('Unable to find ID field for type: ' + this.tableName);
             return '!!cannotFindIdFieldOn' + this.tableName + '!!';
@@ -211,7 +215,7 @@ export class Field
 {
     public targetIdFieldType:string; // if this is a prefixed foreign key, then the name of the non-prefixed key is here
 
-    constructor(public fieldName:string, public fieldType:string, public table:Table, public isReference:boolean = false, public isCalculated:boolean = false)
+    constructor(public originalFieldName:string, public fieldName:string, public fieldType:string, public table:Table, public referencedCol:string | Boolean = false, public isCalculated:boolean = false)
     {
 
     }
@@ -223,11 +227,11 @@ export class Field
 
     translatedFieldType():string
     {
-        var fieldType:string = this.fieldType;
-        var translated:string = Schema.fieldTypeTranslations[fieldType];
+        const fieldType:string = this.fieldType;
+        let translated:string = Schema.fieldTypeTranslations[fieldType];
 
         if (translated == undefined) {
-            var fieldTypeLength:number = fieldType.length;
+            const fieldTypeLength:number = fieldType.length;
             if (fieldTypeLength < 6 ||
                 (   fieldType.substr(fieldTypeLength - 4, 4) !== 'Pojo' &&
                     fieldType.substr(fieldTypeLength - 6, 6) !== 'Pojo[]')
@@ -246,12 +250,15 @@ export class Field
         return translated;
     }
 
-    sequelizeFieldType():string
+    sequelizeFieldType():object
     {
-        var translated:string = Schema.fieldTypeSequelize[this.fieldType];
+        let translated:object = 
+            `{type: ${Schema.fieldTypeSequelize[this.fieldType]}, field: "${this.originalFieldName}"}`;
+
         if (translated == undefined) {
             console.log('Unable to sequelize field type:' + this.fieldType);
-            translated = this.fieldType;
+            translated = 
+                `{type: ${this.fieldType}, field: "${this.originalFieldName}"}`;
         }
         return translated;
     }
@@ -264,16 +271,18 @@ export class Field
     {
         return this.isIdField()
             ? (this.targetIdFieldType == undefined ? this.fieldNameProperCase() : this.targetIdFieldType)
-            : this.isReference
+            : this.referencedCol
                 ? this.fieldType
                 : this.translatedFieldType();
     }
 
     defineFieldType():string {
         if ( this == this.table.fields[0]) {
-            return '{type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true}';
+            const originalFieldName = this.table.fields[0].originalFieldName;
+            return `{type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true, field: "${originalFieldName}"}`;
         } else if (this.table.tableName.substr(0,4) == 'Xref' && this == this.table.fields[1]) {
-            return '{type: "number", primaryKey: true}';
+            const originalFieldName = this.table.fields[1].originalFieldName;
+            return `{type: "number", primaryKey: true, field: "${originalFieldName}"}`;
         }
         return this.sequelizeFieldType();
     }
@@ -281,6 +290,11 @@ export class Field
     public tableNameSingular():string
     {
         return this.table.tableNameSingular();
+    }
+
+    public tableNameUpperCase():string
+    {
+        return this.table.tableNameUpperCase();
     }
 
     public tableNameSingularCamel():string
@@ -371,42 +385,39 @@ interface CustomFieldDefinitionRow extends ColumnDefinitionRow, ReferenceDefinit
 
 export function read(database:string, username:string, password:string, options:sequelize.Options, callback:(err:Error, schema:Schema) => void):void
 {
-    var schema:Schema;
-    var sequelize:sequelize.Sequelize = new Sequelize(database, username, password, options);
-    var tableLookup:util.Dictionary<Table> = {};
-    var xrefs:util.Dictionary<Xref> = {};
-    var associationsFound:util.Dictionary<boolean> = {};
-    var customReferenceRows:ReferenceDefinitionRow[] = [];
-    var idFieldLookup:util.Dictionary<boolean> = {};
+    let schema:Schema;
+    const sequelize:sequelize.Sequelize = new Sequelize(database, username, password, options);
+    const tableLookup:util.Dictionary<Table> = {};
+    const xrefs:util.Dictionary<Xref> = {};
+    const associationsFound:util.Dictionary<boolean> = {};
+    let customReferenceRows:ReferenceDefinitionRow[] = [];
+    const idFieldLookup:util.Dictionary<boolean> = {};
 
-    var sql:string =
+    const sql:string =
         "select table_name, column_name, data_type, ordinal_position " +
         "from information_schema.columns " +
         "where table_schema = '" + database + "' " +
         "order by table_name, ordinal_position";
 
     sequelize
-        .query(sql)
-        .complete(processTablesAndColumns);
-
-    function processTablesAndColumns(err:Error, rows:Array<ColumnDefinitionRow>):void
-    {
-        if (err)
-        {
+        .query(sql, {type: Sequelize.QueryTypes.SELECT})
+        .then(processTablesAndColumns)
+        .catch(function(err: Error) {
             callback(err, null);
             return;
-        }
-
+        });
+    function processTablesAndColumns(rows:Array<ColumnDefinitionRow>):void
+    {
         if (rows == null)
         {
-            var err:Error = new Error("No schema info returned for database.");
+            const err:Error = new Error("No schema info returned for database.");
             callback(err, null);
             return;
         }
 
         if (rows.length == 0)
         {
-            var err:Error = new Error("Empty schema info returned for database.");
+            const err:Error = new Error("Empty schema info returned for database.");
             callback(err, null);
             return;
         }
@@ -416,34 +427,31 @@ export function read(database:string, username:string, password:string, options:
 
     function readCustomFields(originalRows:ColumnDefinitionRow[]):void {
 
-        if (!_.any(originalRows, r => r.table_name == 'SequelizeCustomFieldDefinitions')) {
+        if (!_.some(originalRows, r => r.table_name == 'SequelizeCustomFieldDefinitions')) {
             processTablesAndColumnsWithCustom(originalRows, {});
             return;
         }
 
-        var sql:string =
+        const sql:string =
             "select table_name, column_name, data_type, referenced_table_name, referenced_column_name, ordinal_position " +
             "from SequelizeCustomFieldDefinitions " +
             "order by table_name, ordinal_position";
 
         sequelize
-            .query(sql)
-            .complete(processCustomFields);
-
-        function processCustomFields(err:Error, customFields:CustomFieldDefinitionRow[]):void {
-
-            if (err) {
+            .query(sql, {type: Sequelize.QueryTypes.SELECT})
+            .then(processCustomFields)
+            .catch(function(err: Error) {
                 callback(err, null);
                 return;
-            }
-
-            var customFieldLookup:util.Dictionary<ColumnDefinitionRow> =
+            });
+        function processCustomFields(customFields:CustomFieldDefinitionRow[]):void {
+            const customFieldLookup:util.Dictionary<ColumnDefinitionRow> =
                     util.arrayToDictionary(customFields,'column_name');
 
-            var combined:ColumnDefinitionRow[] = originalRows.concat(customFields);
+            const combined:ColumnDefinitionRow[] = originalRows.concat(customFields);
             combined.sort(sortByTableNameThenOrdinalPosition);
 
-            customReferenceRows = _.where(customFields, cf => cf.referenced_table_name != null && cf.referenced_column_name != null);
+            customReferenceRows = _.filter(customFields, cf => cf.referenced_table_name != null && cf.referenced_column_name != null);
 
             processTablesAndColumnsWithCustom(combined, customFieldLookup);
         }
@@ -464,16 +472,16 @@ export function read(database:string, username:string, password:string, options:
 
     function processTablesAndColumnsWithCustom(rows:ColumnDefinitionRow[], customFieldLookup:util.Dictionary<ColumnDefinitionRow>):void {
 
-        var tables:Array<Table> = [];
+        const tables:Array<Table> = [];
         schema = new Schema(tables);
 
-        var table:Table = new Table(schema, "");
+        let table:Table = new Table(schema, "");
 
-        var calculatedFieldsFound:_.Dictionary<boolean> = {};
+        const calculatedFieldsFound:_.Dictionary<boolean> = {};
 
-        for(var index:number = 0; index<rows.length; index++)
+        for(let index:number = 0; index<rows.length; index++)
         {
-            var row:ColumnDefinitionRow = rows[index];
+            const row:ColumnDefinitionRow = rows[index];
 
             if (row.table_name === 'SequelizeCustomFieldDefinitions') {
                 continue;
@@ -485,9 +493,9 @@ export function read(database:string, username:string, password:string, options:
                 tables.push(table);
             }
 
-            var isCalculated:boolean = customFieldLookup[row.column_name] !== undefined;
+            const isCalculated:boolean = customFieldLookup[row.column_name] !== undefined;
 
-            var field:Field = new Field(row.column_name, row.data_type, table, false, isCalculated);
+            const field:Field = new Field(row.column_name, toCamelCase(row.column_name), row.data_type, table, false, isCalculated);
             table.fields.push(field);
 
             if (isCalculated && !calculatedFieldsFound[field.fieldName]) {
@@ -503,25 +511,23 @@ export function read(database:string, username:string, password:string, options:
 
     function readReferences():void {
 
-        var sql:string =
+        const sql:string =
             "SELECT	table_name, column_name, referenced_table_name, referenced_column_name " +
             "FROM 	information_schema.key_column_usage " +
             "WHERE	constraint_schema = '" + database + "' " +
             "AND	referenced_table_name IS NOT NULL;";
 
         sequelize
-            .query(sql)
-            .complete(processReferences);
+            .query(sql, {type: Sequelize.QueryTypes.SELECT})
+            .then(processReferences)
+            .catch(function(err: Error) {
+                callback(err, null);
+                return;
+            });
     }
 
-    function processReferences(err:Error, rows:Array<ReferenceDefinitionRow>):void
+    function processReferences(rows:Array<ReferenceDefinitionRow>):void
     {
-        if (err)
-        {
-            callback(err, null);
-            return;
-        }
-
         if (rows == null || rows.length == 0)
         {
             console.log("Warning: No references defined in database.");
@@ -559,10 +565,10 @@ export function read(database:string, username:string, password:string, options:
             // referenced_table_name    =   Accounts
             // referenced_column_name   =   accountId
             //
-            var parentTable = tableLookup[row.referenced_table_name];
-            var childTable = tableLookup[row.table_name];
+            const parentTable = tableLookup[row.referenced_table_name];
+            const childTable = tableLookup[row.table_name];
 
-            var associationName:string;
+            let associationName:string;
 
             if (row.column_name !== row.referenced_column_name) {
 
@@ -584,16 +590,32 @@ export function read(database:string, username:string, password:string, options:
             // create array of children in parent, i.e., AccountPojo.leads:LeadPojo[]
             // but not for custom fields
             if (!row.hasOwnProperty('ordinal_position')) {
-                parentTable.fields.push(new Field(
-                    util.camelCase(row.table_name),                                     // Leads -> leads
-                    Sequelize.Utils.singularize(row.table_name) + 'Pojo[]',             // Leads -> LeadPojo[]
-                    parentTable,                                                        // Accounts table reference
-                    true));
+                const lastField = parentTable.fields[parentTable.fields.length - 1];
+                const fieldType: string = Sequelize.Utils.singularize(row.table_name) + 'Pojo[]';
+                let fieldName: string;
+                if (lastField.fieldType === fieldType &&
+                    lastField.table.tableName === parentTable.tableName) {
+                    // If the is two relations between two entities
+                    lastField.fieldName = 
+                        toCamelCase(lastField.fieldName + '_' + lastField.referencedCol);
+                    fieldName = toCamelCase(row.table_name + '_' + row.column_name);
+                } else {
+                    fieldName = toCamelCase(row.table_name);                // Leads -> leads
+                }
+
+                const field = new Field(
+                    row.column_name,
+                    fieldName,                                               
+                    fieldType,              // Leads -> LeadPojo[]
+                    parentTable,            // Accounts table reference
+                    row.column_name);
+                parentTable.fields.push(field);
             }
 
             // create singular parent reference from child
             childTable.fields.push(new Field(
-                util.camelCase(Sequelize.Utils.singularize(
+                row.column_name,
+                toCamelCase(Sequelize.Utils.singularize(
                         associationName === undefined
                             ? row.referenced_table_name                             // Accounts -> account
                             : associationName)),                                    // ownerUserId -> OwnerUsers -> ownerUser
@@ -606,14 +628,14 @@ export function read(database:string, username:string, password:string, options:
                                             row.referenced_table_name,
                                             row.table_name,
                                             associationName,
-                                            util.camelCase(Sequelize.Utils.singularize(row.referenced_table_name)) + toTitleCase(Schema.idSuffix),
+                                            toCamelCase(Sequelize.Utils.singularize(row.referenced_table_name)) + toTitleCase(Schema.idSuffix),
                                             row.column_name,
                                             false,
                                             schema));
         }
 
         function processReferenceXrefRow(row:ReferenceDefinitionRow):void {
-            var xref:Xref = xrefs[row.table_name];
+            const xref:Xref = xrefs[row.table_name];
 
             if (xref == null) {
                 xrefs[row.table_name] = new Xref(
@@ -629,27 +651,29 @@ export function read(database:string, username:string, password:string, options:
         }
 
         function processReferenceXrefs():void {
-            for (var xrefName in xrefs) {
+            for (const xrefName in xrefs) {
 
                 if (!xrefs.hasOwnProperty(xrefName)) {
                     continue;
                 }
 
-                var xref:Xref = xrefs[xrefName];
+                const xref:Xref = xrefs[xrefName];
 
                 schema.xrefs.push(xref);
 
-                var firstTable:Table = tableLookup[xref.firstTableName];
-                var secondTable:Table = tableLookup[xref.secondTableName];
+                const firstTable:Table = tableLookup[xref.firstTableName];
+                const secondTable:Table = tableLookup[xref.secondTableName];
 
                 firstTable.fields.push(new Field(
-                    util.camelCase(xref.secondTableName),
+                    xref.secondTableName,
+                    toCamelCase(xref.secondTableName),
                     Sequelize.Utils.singularize(xref.secondTableName) + 'Pojo[]',
                     firstTable,
                     true));
 
                 secondTable.fields.push(new Field(
-                    util.camelCase(xref.firstTableName),
+                    xref.firstTableName,
+                    toCamelCase(xref.firstTableName),
                         Sequelize.Utils.singularize(xref.firstTableName) + 'Pojo[]',
                     secondTable,
                     true));
@@ -660,7 +684,7 @@ export function read(database:string, username:string, password:string, options:
 
     function fixViewNames():void {
 
-        var tableNamesManyForms:string[] = [];
+        const tableNamesManyForms:string[] = [];
 
         _.each(schema.tables, extrapolateTableNameForms);
 
@@ -693,12 +717,12 @@ export function read(database:string, username:string, password:string, options:
             _.each(tableNamesManyForms, fixViewNamePart);
 
             function fixViewNamePart(otherTableNameForm:string, index:number, array:string[]):void {
-                var i:number = table.tableName.indexOf(otherTableNameForm.toLowerCase());
+                const i:number = table.tableName.indexOf(otherTableNameForm.toLowerCase());
                 if (i < 0) {
                     return;
                 }
 
-                var newTableName:string = '';
+                let newTableName:string = '';
 
                 if (i !== 0) {
                     newTableName = table.tableName.substr(0, i);
@@ -728,15 +752,15 @@ export function read(database:string, username:string, password:string, options:
                 return;
             }
 
-            var otherTableName:string = Sequelize.Utils.pluralize(field.fieldNameProperCase().substr(0, field.fieldName.length - Schema.idSuffix.length), "en");
+            const otherTableName:string = Sequelize.Utils.pluralize(field.fieldNameProperCase().substr(0, field.fieldName.length - Schema.idSuffix.length));
 
-            var otherTable:Table = tableLookup[otherTableName];
+            const otherTable:Table = tableLookup[otherTableName];
             if (otherTable === undefined) {
                 console.log('Unable to find related table for view ' + view.tableName + '.' + field.fieldName + ', expected ' + otherTableName + '.');
                 return;
             }
 
-            var reference:Reference = new Reference(otherTableName,
+            const reference:Reference = new Reference(otherTableName,
                                                     view.tableName,
                                                     undefined,
                                                     field.fieldName,
@@ -746,17 +770,19 @@ export function read(database:string, username:string, password:string, options:
 
             schema.references.push(reference);
 
-            var otherTableSingular:string = Sequelize.Utils.singularize(otherTableName, 'en');
+            const otherTableSingular:string = Sequelize.Utils.singularize(otherTableName);
 
             view.fields.push(new Field(
                 otherTableSingular,
+                toCamelCase(otherTableSingular),
                 otherTableSingular + 'Pojo',
                 view,
                 true));
 
             otherTable.fields.push(new Field(
-                util.camelCase(view.tableName),
-                Sequelize.Utils.singularize(view.tableName, 'en') + 'Pojo[]',
+                view.tableName,
+                toCamelCase(view.tableName),
+                Sequelize.Utils.singularize(view.tableName) + 'Pojo[]',
                 otherTable,
                 true));
 
@@ -765,28 +791,28 @@ export function read(database:string, username:string, password:string, options:
     
     function processIdFields():void
     {
-        var idSuffix = Schema.idSuffix;
+        const idSuffix = Schema.idSuffix;
 
         if (idSuffix == null || !idSuffix.length)
         {
             return;
         }
 
-        var idFields:Array<Field> = [];
+        const idFields:Array<Field> = [];
         
-        var idSuffixLen:number = idSuffix.length;
+        const idSuffixLen:number = idSuffix.length;
 
-        for(var tableIndex:number = 0; tableIndex < schema.tables.length; tableIndex++)
+        for(let tableIndex:number = 0; tableIndex < schema.tables.length; tableIndex++)
         {
-            var table:Table = schema.tables[tableIndex];
+            const table:Table = schema.tables[tableIndex];
 
             if (table == null || table.fields == null || table.fields.length === 0)
             {
                 continue;
             }
 
-            var field:Field = table.fields[0];
-            var fieldName:string = field.fieldName;
+            const field:Field = table.fields[0];
+            const fieldName:string = field.fieldName;
 
             if (!idFieldLookup[fieldName] &&
                 fieldName.length > idSuffixLen &&
@@ -805,12 +831,12 @@ export function read(database:string, username:string, password:string, options:
 
     function processPrefixedForeignKeyTypes():void {
 
-        var idSuffix = Schema.idSuffix;
-        var idSuffixLen:number = idSuffix.length;
+        const idSuffix = Schema.idSuffix;
+        const idSuffixLen:number = idSuffix.length;
 
-        for(var tableIndex:number = 0; tableIndex < schema.tables.length; tableIndex++)
+        for(let tableIndex:number = 0; tableIndex < schema.tables.length; tableIndex++)
         {
-            var table:Table = schema.tables[tableIndex];
+            const table:Table = schema.tables[tableIndex];
 
             if (table == null || table.fields == null || table.fields.length < 2)
             {
@@ -818,10 +844,10 @@ export function read(database:string, username:string, password:string, options:
             }
 
             // first field is never a prefixed foreign key
-            for(var fieldIndex:number = 1; fieldIndex < table.fields.length; fieldIndex++)
+            for(let fieldIndex:number = 1; fieldIndex < table.fields.length; fieldIndex++)
             {
-                var field:Field = table.fields[fieldIndex];
-                var fieldName:string = field.fieldName;
+                const field:Field = table.fields[fieldIndex];
+                const fieldName:string = field.fieldName;
 
                 if (!idFieldLookup[fieldName] &&
                     fieldName.length > idSuffixLen &&
@@ -833,8 +859,8 @@ export function read(database:string, username:string, password:string, options:
                     // need to find the actual id field
                     // ex. userId
 
-                    for(var c:number = 1; c<fieldName.length - 2; c++) {
-                        var rest:string = fieldName.charAt(c).toLowerCase() + fieldName.substr(c + 1);
+                    for(let c:number = 1; c<fieldName.length - 2; c++) {
+                        const rest:string = fieldName.charAt(c).toLowerCase() + fieldName.substr(c + 1);
                         if (idFieldLookup[rest]) {
                             // found it
                             field.targetIdFieldType = rest.charAt(0).toUpperCase() + rest.substr(1);
@@ -851,5 +877,10 @@ function toTitleCase(text:string):string {
 }
 
 function toCamelCase(text:string):string {
-    return text.charAt(0).toLowerCase() + text.substr(1);
+    const lowerCaseStr = text.charAt(0).toLowerCase() + text.substr(1);
+    return lowerCaseStr.replace(/(\_\w)/g, m => m[1].toUpperCase());
+}
+
+function toUpperCase(text:string):string {
+    return text.charAt(0).toUpperCase() + text.substr(1);
 }

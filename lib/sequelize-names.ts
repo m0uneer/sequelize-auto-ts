@@ -14,7 +14,7 @@ export interface SequelizeNames {
     TableNames: TableNames;
     calculatedFields:CalculatedFields;
     references:References;
-    /*__each__ tables */ __tableNameSingularCamel__Fields:__tableName__Fields;
+    /*__each__ tables */ __tableNameSingularCamel__Fields:__tableNameUpperCase__Fields;
 }
 
 export class TableNames {
@@ -24,10 +24,10 @@ export var tableNames:TableNames = new TableNames();
 
 /*__startEach__ tables */
 
-export class __tableName__Fields {
+export class __tableNameUpperCase__Fields {
     /*__each__ fields */ __fieldName__:string = '__fieldName__';
 }
-export var __tableNameSingularCamel__Fields:__tableName__Fields = new __tableName__Fields();
+export var __tableNameSingularCamel__Fields:__tableNameUpperCase__Fields = new __tableNameUpperCase__Fields();
 
 /*__endEach__*/
 

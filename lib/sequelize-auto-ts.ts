@@ -6,10 +6,11 @@ import path = require("path");
 var ScriptTemplate = require("script-template");
 import fs = require("fs");
 
+import sequelize from 'sequelize';
 
-var Sequelize:sequelize.SequelizeStatic = require("sequelize");
+const Sequelize:sequelize.SequelizeStatic = sequelize;
 
-var _:sequelize.Lodash = Sequelize.Utils._;
+var _:sequelize.SequelizeLoDash = Sequelize.Utils._;
 
 var targetProjectRootDirectory:string = null;
 
@@ -57,7 +58,7 @@ function generateFromTemplate(options:GenerateOptions, schema:schema.Schema, tem
     console.log("Generating " + templateName);
 
     var templateText:string = fs.readFileSync(path.join(__dirname, templateName), "utf8");
-
+    
     var engine = new ScriptTemplate(templateText);
     var genText:string = engine.run(schema);
 

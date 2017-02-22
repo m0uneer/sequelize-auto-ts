@@ -7,6 +7,4 @@
 // See schemaInfoTemplate for edits
 //
 ////////////////////////////////////////////////////////////////////
-/// <reference path="../../typings/node/node.d.ts" />
-/// <reference path="../../lib/sequelize.d.ts" />
-//# sourceMappingURL=sequelize-types.js.map
+"use strict";

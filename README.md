@@ -25,16 +25,6 @@ This file contains interfaces for all of the tables in the database. Three inter
 
 `sequelize-models.ts`
 
-This file contains all of the Sequelize model definitions. This module exposes an `initialize` function which defines all of the models (tables) within Sequelize. This method must be called before any of the sequelize-auto-ts generated instances can be used. In addition to the `instance` method, a single model variable is exposed for each table which is then used to query individual tables.
-
-`sequelize.d.ts`
-
-This is definitions for all of the core Sequelize functionality. It is copied to the target if it is not found in the target project. The project is defined as the first parent folder of the target directory that contains a `package.json` file. If you prefer to place all of your library definition files in a specific directory, move this file to your desired directory within your project and re-run sequelize-auto-ts. sequelize-auto-ts will find the file and calculate the proper relative paths to be used in `sequelize-models.ts` and `sequelize-types.ts`.
-
-`node.d.ts`
-
-This is the definition file for Node. As with `sequelize.d.ts` if it is found in the target project the existing definition file will be referenced. If the file is not found, then it is copied to the target directory. Note that sequelize-auto-ts will not reference any definition file underneath `node_modules`.
-
 # Demo Database Schema
 
 For the rest of the explanation we'll use a very simple database with two tables and a relationship between them. It is defined as follows:
@@ -90,7 +80,7 @@ export interface RoleInstance extends sequelize.Instance<RoleInstance, RolePojo>
 export interface UserInstance extends sequelize.Instance<UserInstance, UserPojo>, UserPojo { }
 ```
 
-Each table then gets an `Instance` interface. This interface represents the object actually returned by Sequelize for each database entity. This interface extends the corresponding `Pojo` interface and thus has an interface field for every database field. It additionally extends `sequelize.Instance` which defines all of the Sequelize methods and fields available on instances, such as `get()`, `set()`, `save()`, etc. For a full list of available methods see the Sequelize documentation or refer to `sequelize.d.ts`.
+Each table then gets an `Instance` interface. This interface represents the object actually returned by Sequelize for each database entity. This interface extends the corresponding `Pojo` interface and thus has an interface field for every database field. It additionally extends `sequelize.Instance` which defines all of the Sequelize methods and fields available on instances, such as `get()`, `set()`, `save()`, etc. For a full list of available methods.
 
 Note that the `Instance` instances have circular references and cannot be directly converted to JSON. Instead call either the `toJSON()` method or use the `values` field to return the plain `Pojo` corresponding to the `Instance` which can then be converted to JSON.
 

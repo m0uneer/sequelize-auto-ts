@@ -1,27 +1,12 @@
-////////////////////////////////////////////////////////////////////
-//
-// GENERATED CLASS
-//
-// DO NOT EDIT
-//
-// See sequelize-auto-ts for edits
-//
-////////////////////////////////////////////////////////////////////
+"use strict";
 var Sequelize = require('sequelize');
-
 exports.initialized = false;
-
-exports.Roles;
-exports.Users;
-
 function initialize(database, username, password, options) {
     var _this = this;
     if (exports.initialized) {
         return;
     }
-
     var sequelize = new Sequelize(database, username, password, options);
-
     exports.Roles = sequelize.define('Role', {
         'RoleID': 'number',
         'RoleName': 'string'
@@ -40,7 +25,6 @@ function initialize(database, username, password, options) {
             }
         }
     });
-
     exports.Users = sequelize.define('User', {
         'UserID': 'number',
         'RoleID': 'number',
@@ -65,4 +49,3 @@ function initialize(database, username, password, options) {
     });
 }
 exports.initialize = initialize;
-//# sourceMappingURL=sequelize-models.js.map

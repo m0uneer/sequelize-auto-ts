@@ -1,8 +1,0 @@
-{
-  "version": "v4",
-  "repo": "samuelneff/DefinitelyTyped",
-  "ref": "sequelize",
-  "path": "typings",
-  "bundle": "typings/tsd.d.ts",
-  "installed": {}
-}

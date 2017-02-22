@@ -1,16 +1,12 @@
-/// <reference path="../typings/node/node.d.ts" />
-/// <reference path="./sequelize.d.ts" />
-
 import schema = require("./schema");
 import path = require("path");
 var ScriptTemplate = require("script-template");
 import fs = require("fs");
 
-import sequelize from 'sequelize';
+import * as sequelize from 'sequelize';
+import * as _ from 'lodash';
 
 const Sequelize:sequelize.SequelizeStatic = sequelize;
-
-var _:sequelize.SequelizeLoDash = Sequelize.Utils._;
 
 var targetProjectRootDirectory:string = null;
 
@@ -60,6 +56,7 @@ function generateFromTemplate(options:GenerateOptions, schema:schema.Schema, tem
     var templateText:string = fs.readFileSync(path.join(__dirname, templateName), "utf8");
     
     var engine = new ScriptTemplate(templateText);
+
     var genText:string = engine.run(schema);
 
     genText = translateReferences(genText, options);
@@ -125,7 +122,7 @@ function findTargetProjectRootDirectory(options:GenerateOptions):string
 function hasFile(directory:string, file:string):boolean
 {
     var files:string[] = fs.readdirSync(directory);
-    return _.contains(files, file);
+    return _.includes(files, file);
 }
 
 function findTargetPath(fileName:string, searchDirectory:string):string

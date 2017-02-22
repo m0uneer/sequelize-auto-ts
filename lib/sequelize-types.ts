@@ -12,13 +12,10 @@ import sequelize from 'sequelize';
 
 import types = require('./sequelize-types'); // important so we can use same fully qualified names in all generated files
 
-/*__each__ idFields */ export interface __fieldNameProperCase__ { __fieldNameProperCase__:number; }
-
 /*__ignore__*/ export interface __translatedFieldType__ {}
 /*__ignore__*/ export interface __customFieldType__ {}
 /*__ignore__*/ export interface __tableNameSingular__Instance {}
 /*__ignore__*/ export interface __tableNameSingular__Pojo {}
-/*__ignore__*/ export interface __idFieldNameTitleCase__ {}
 
 var asserters:{[typeName:string]:(pojo:any, allowUndefined?:boolean) => void} = {};
 
@@ -46,7 +43,7 @@ export interface __tableNameSingular__Pojo
 export interface __tableNameSingular__Instance extends sequelize.Instance<__tableNameSingular__Instance>, __tableNameSingular__Pojo { }
 
 export interface __tableName__Model extends sequelize.Model<__tableNameSingular__Instance, __tableNameSingular__Pojo> {
-    get__tableNameSingular__(__idFieldName__:__idFieldNameTitleCase__):Promise<__tableNameSingular__Instance>;
+    get__tableNameSingular__(__idFieldName__: number):Promise<__tableNameSingular__Instance>;
     get__tableNameSingular__(__tableNameSingularCamel__:__tableNameSingular__Pojo):Promise<__tableNameSingular__Instance>;
 }
 

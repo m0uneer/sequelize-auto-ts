@@ -1,6 +1,3 @@
-
-/// <reference path="../typings/node/node.d.ts" />
-
 import generator = require("./sequelize-auto-ts");
 import fs = require("fs");
 var prompt = require("prompt");

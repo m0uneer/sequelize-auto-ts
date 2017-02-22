@@ -24,6 +24,7 @@
     "mysql": "2.3.2"
   },
   "devDependencies": {
+    "@types/node": "^7.0.5",
     "@types/sequelize": "^4.0.40",
     "jasmine-node": "1.14.3"
   },

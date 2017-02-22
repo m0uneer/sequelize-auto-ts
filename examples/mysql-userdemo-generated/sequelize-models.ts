@@ -7,9 +7,7 @@
 // See sequelize-auto-ts for edits
 //
 ////////////////////////////////////////////////////////////////////
-
-/// <reference path="../../typings/node/node.d.ts" />
-/// <reference path="../../lib/sequelize.d.ts" />
+import sequelize from 'sequelize';
 
 import types = require('./sequelize-types');
 

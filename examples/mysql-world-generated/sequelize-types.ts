@@ -8,8 +8,7 @@
 //
 ////////////////////////////////////////////////////////////////////
 
-/// <reference path="../../typings/node/node.d.ts" />
-/// <reference path="../../lib/sequelize.d.ts" />
+import sequelize from 'sequelize';
 
 export interface cityPojo
 {

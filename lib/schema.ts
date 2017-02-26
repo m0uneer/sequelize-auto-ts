@@ -1,7 +1,9 @@
 /****************************
  *
  * Loads and exposes schema from database
- */
+ * @TODO Remove this redundancy: keep only camelCase attrs
+ * {"issues": [{"createdBy": 1,"assignedTo": 1, "created_by": 1,"assigned_to": 1}]}
+*/
 
 import sequelize from 'sequelize';
 import * as _ from 'lodash';
@@ -138,11 +140,12 @@ export class Schema {
             }
             foundIds[pk.fieldName] = true;
 
-            const r:Reference = new Reference(table.tableName,
+            const r:Reference = new Reference(
+                table.tableName,
                 table.tableName,
                 undefined,
-                pk.fieldName,
-                pk.fieldName,
+                pk.originalFieldName,
+                pk.originalFieldName,
                 false,
                 this);
             u.push(r);
@@ -162,22 +165,17 @@ export class Table
 
     public tableNameSingular():string
     {
+        return toProperSingularizeCase(this.tableName);
+    }
+
+    public tableNameSingularNormal():string
+    {
         return Sequelize.Utils.singularize(this.tableName);
-    }
-
-    public tableNameUpperCase():string
-    {
-        return toUpperCase(this.tableNameSingular());
-    }
-
-    public tableNameSingularCamel():string
-    {
-        return toCamelCase(this.tableNameSingular());
     }
 
     public tableNameCamel():string
     {
-        return toCamelCase(this.tableName);
+        return camelTitleCase(this.tableName);
     }
 
     public tableNameModel():string
@@ -289,14 +287,9 @@ export class Field
         return this.table.tableNameSingular();
     }
 
-    public tableNameUpperCase():string
+    public tableNameSingularNormal():string
     {
-        return this.table.tableNameUpperCase();
-    }
-
-    public tableNameSingularCamel():string
-    {
-        return this.table.tableNameSingularCamel();
+        return this.table.tableNameSingularNormal();
     }
 }
 
@@ -309,12 +302,11 @@ export class Reference {
                 public foreignKey:string,
                 public isView:boolean,
                 private schema:Schema) {
-
     }
 
     public primaryTableNameCamel():string
     {
-        return toCamelCase(this.primaryTableName);
+        return camelTitleCase(this.primaryTableName);
     }
 
     public primaryTableNameModel():string {
@@ -322,7 +314,7 @@ export class Reference {
     }
     public foreignTableNameCamel():string
     {
-        return toCamelCase(this.foreignTableName);
+        return camelTitleCase(this.foreignTableName);
     }
 
     associationNameQuoted():string {
@@ -344,19 +336,21 @@ export class Xref {
 
     public firstTableNameCamel():string
     {
-        return toCamelCase(this.firstTableName);
+        return camelTitleCase(this.firstTableName);
     }
 
     public secondTableNameCamel():string
     {
-        return toCamelCase(this.secondTableName);
+        return camelTitleCase(this.secondTableName);
     }
 
 }
 
 // Associations are named foreign keys, like OwnerUserID
 export class Association {
-    constructor(public associationName:string) {}
+    constructor(public associationName:string) {
+        this.associationName = toCamelCase(associationName);
+    }
 }
 
 interface ColumnDefinitionRow
@@ -492,7 +486,13 @@ export function read(database:string, username:string, password:string, options:
 
             const isCalculated:boolean = customFieldLookup[row.column_name] !== undefined;
 
-            const field:Field = new Field(row.column_name, toCamelCase(row.column_name), row.data_type, table, false, isCalculated);
+            const field:Field = new Field(
+                row.column_name,
+                toCamelCase(row.column_name),
+                row.data_type,
+                table,
+                false,
+                isCalculated);
             table.fields.push(field);
 
             if (isCalculated && !calculatedFieldsFound[field.fieldName]) {
@@ -599,9 +599,9 @@ export function read(database:string, username:string, password:string, options:
                 if (!parentTable.fields.some(f => f.fieldName === fieldName)) {
                     parentTable.fields.push(new Field(
                         fieldName,
-                        util.camelCase(row.table_name),                                     // Leads -> leads
-                        Sequelize.Utils.singularize(row.table_name) + 'Pojo[]',             // Leads -> LeadPojo[]
-                        parentTable,                                                        // Accounts table reference
+                        toCamelCase(row.table_name),                         // Leads
+                        toProperSingularizeCase(row.table_name) + 'Pojo[]',  // Leads -> LeadPojo[]
+                        parentTable,                                         // Accounts table reference
                         fieldName));
                 }
             }
@@ -609,11 +609,11 @@ export function read(database:string, username:string, password:string, options:
             // create singular parent reference from child
             childTable.fields.push(new Field(
                 row.column_name,
-                toCamelCase(Sequelize.Utils.singularize(
+                toCamelCase(singularize(
                     associationName === undefined
                         ? row.referenced_table_name                             // Accounts -> account
                         : associationName)),                                    // ownerUserId -> OwnerUsers -> ownerUser
-                Sequelize.Utils.singularize(row.referenced_table_name) + 'Pojo',    // Accounts -> AccountPojo
+                toProperSingularizeCase(row.referenced_table_name) + 'Pojo',    // Accounts -> AccountPojo
                 childTable,
                 true));
 
@@ -621,10 +621,10 @@ export function read(database:string, username:string, password:string, options:
             schema.references.push(new Reference(
                 row.referenced_table_name,
                 row.table_name,
-                associationName === undefined
+                toCamelCase(singularize(associationName === undefined
                     ? row.referenced_table_name                             // Accounts -> account
-                    : associationName,
-                toCamelCase(Sequelize.Utils.singularize(row.referenced_table_name)) + toTitleCase(Schema.idSuffix),
+                    : associationName)),
+                row.referenced_table_name + '_' + Schema.idSuffix,
                 row.column_name,
                 false,
                 schema));
@@ -663,14 +663,14 @@ export function read(database:string, username:string, password:string, options:
                 firstTable.fields.push(new Field(
                     xref.secondTableName,
                     toCamelCase(xref.secondTableName),
-                    Sequelize.Utils.singularize(xref.secondTableName) + 'Pojo[]',
+                    toProperSingularizeCase(xref.secondTableName) + 'Pojo[]',
                     firstTable,
                     true));
 
                 secondTable.fields.push(new Field(
                     xref.firstTableName,
                     toCamelCase(xref.firstTableName),
-                    Sequelize.Utils.singularize(xref.firstTableName) + 'Pojo[]',
+                    toProperSingularizeCase(xref.firstTableName) + 'Pojo[]',
                     secondTable,
                     true));
 
@@ -699,7 +699,7 @@ export function read(database:string, username:string, password:string, options:
             }
 
             tableNamesManyForms.push(table.tableName);
-            tableNamesManyForms.push(Sequelize.Utils.singularize(table.tableName));
+            tableNamesManyForms.push(toProperSingularizeCase(table.tableName));
         }
 
         function fixViewName(table:Table, index:number, array:Table[]):void {
@@ -757,17 +757,18 @@ export function read(database:string, username:string, password:string, options:
                 return;
             }
 
-            const reference:Reference = new Reference(otherTableName,
-                view.tableName,
-                undefined,
-                field.fieldName,
-                field.fieldName,
-                true,
-                schema);
+            // const reference:Reference = new Reference(
+            //     otherTableName,
+            //     view.tableName,
+            //     undefined,
+            //     field.originalFieldName,
+            //     field.originalFieldName,
+            //     true,
+            //     schema);
 
-            schema.references.push(reference);
+            // schema.references.push(reference);
 
-            const otherTableSingular:string = Sequelize.Utils.singularize(otherTableName);
+            // const otherTableSingular:string = toProperSingularizeCase(otherTableName);
 
             // view.fields.push(new Field(
             //     otherTableSingular,
@@ -775,11 +776,11 @@ export function read(database:string, username:string, password:string, options:
             //     otherTableSingular + 'Pojo',
             //     view,
             //     true));
-            //
+
             // otherTable.fields.push(new Field(
             //     view.tableName,
             //     toCamelCase(view.tableName),
-            //     Sequelize.Utils.singularize(view.tableName) + 'Pojo[]',
+            //     toProperSingularizeCase(view.tableName) + 'Pojo[]',
             //     otherTable,
             //     true));
 
@@ -870,7 +871,7 @@ export function read(database:string, username:string, password:string, options:
 }
 
 function toTitleCase(text:string):string {
-    return text.charAt(0).toUpperCase() + text.substr(1, text.length - 1);
+    return text.charAt(0).toUpperCase() + text.substr(1);
 }
 
 function toCamelCase(text:string):string {
@@ -878,6 +879,14 @@ function toCamelCase(text:string):string {
     return lowerCaseStr.replace(/(\_\w)/g, m => m[1].toUpperCase());
 }
 
-function toUpperCase(text:string):string {
-    return text.charAt(0).toUpperCase() + text.substr(1);
+function singularize(text:string):string {
+    return Sequelize.Utils.singularize(text);
+}
+
+function toProperSingularizeCase(text:string):string {
+    return toTitleCase(toCamelCase(singularize(text)));
+}
+
+function camelTitleCase(text:string):string {
+    return toTitleCase(toCamelCase(text));
 }

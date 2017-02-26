@@ -17,7 +17,6 @@ export interface GenerateOptions
     password:string;
     options:sequelize.Options;
     modelFactory?:boolean;
-
     targetDirectory:string;
 }
 export function generate(options:GenerateOptions, callback?:(err:Error) => void):void {

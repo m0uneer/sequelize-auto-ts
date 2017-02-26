@@ -19,11 +19,11 @@ export let models:types.generatedModels;
 
 export let SEQUELIZE:sequelize.Sequelize;
 
-/*__each__ tables */ export let __tableName__:types.__tableName__Model;
+/*__each__ tables */ export let __tableNameCamel__:types.__tableNameSingular__Model;
 
 /*__ignore__*/ let __defineFieldType__;
-/*__ignore__*/ let __primaryTableName__:sequelize.Model<any, any>;
-/*__ignore__*/ let __foreignTableName__:sequelize.Model<any, any>;
+/*__ignore__*/ let __primaryTableNameCamel__:sequelize.Model<any, any>;
+/*__ignore__*/ let __foreignTableNameCamel__:sequelize.Model<any, any>;
 /*__ignore__*/ let __firstTableName__:sequelize.Model<any, any>;
 /*__ignore__*/ let __secondTableName__:sequelize.Model<any, any>;
 /*__ignore__*/ let __associationNameQuoted__:string;
@@ -41,22 +41,22 @@ export function initialize(database:string, username:string, password:string, op
 
     /*__startEach__ tables */
 
-    __tableName__ = <types.__tableName__Model> SEQUELIZE.define<types.__tableNameSingular__Instance, types.__tableNameSingular__Pojo>('__tableNameSingular__', {
+    __tableNameCamel__ = <types.__tableNameSingular__Model> SEQUELIZE.define<types.__tableNameSingular__Instance, types.__tableNameSingular__Pojo>('__tableName__', {
         /*__each__ realDbFields, */'__fieldName__':__defineFieldType__
         },
         {
             timestamps: false,
             freezeTableName: true,
             classMethods: {
-                get__tableNameSingular__:(__tableNameSingularCamel__:any) => {
+                get__tableNameSingular__:(__tableNameSingular__:any) => {
                     const where:{[key:string]:any} = {};
-                    const id:number = parseInt(__tableNameSingularCamel__);
+                    const id:number = parseInt(__tableNameSingular__);
                     if (isNaN(id)) {
-                        /*__each__ realDbFields */ if (__tableNameSingularCamel__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingularCamel__['__fieldName__']}
+                        /*__each__ realDbFields */ if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
                     } else {
                         where['__idFieldName__'] = id;
                     }
-                    return __tableName__.find({where: where});
+                    return __tableNameCamel__.find({where: where});
                 }
             }
         });
@@ -64,8 +64,8 @@ export function initialize(database:string, username:string, password:string, op
 
     /*__startEach__ references */
 
-    __primaryTableName__.hasMany(__foreignTableName__, {foreignKey: '__foreignKey__' });
-    __foreignTableName__.belongsTo(__primaryTableName__, {as: __associationNameQuoted__, foreignKey: '__foreignKey__' });
+    __primaryTableNameCamel__.hasMany(__foreignTableNameCamel__, {foreignKey: '__foreignKey__' });
+    __foreignTableNameCamel__.belongsTo(__primaryTableNameCamel__, {as: __associationNameQuoted__, foreignKey: '__foreignKey__' });
 
     /*__endEach__*/
 

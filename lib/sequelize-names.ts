@@ -14,20 +14,20 @@ export interface SequelizeNames {
     TableNames: TableNames;
     calculatedFields:CalculatedFields;
     references:References;
-    /*__each__ tables */ __tableNameSingularCamel__Fields:__tableNameUpperCase__Fields;
+    /*__each__ tables */ __tableNameSingular__Fields:__tableNameSingular__Fields;
 }
 
 export class TableNames {
-    /*__each__ tables */ __tableNameModel__:string = '__tableName__';
+    /*__each__ tables */ __tableNameModel__:string = '__tableNameCamel__';
 }
 export var tableNames:TableNames = new TableNames();
 
 /*__startEach__ tables */
 
-export class __tableNameUpperCase__Fields {
+export class __tableNameSingular__Fields {
     /*__each__ fields */ __fieldName__:string = '__fieldName__';
 }
-export var __tableNameSingularCamel__Fields:__tableNameUpperCase__Fields = new __tableNameUpperCase__Fields();
+export var __tableNameSingularNormal__Fields:__tableNameSingular__Fields = new __tableNameSingular__Fields();
 
 /*__endEach__*/
 

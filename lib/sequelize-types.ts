@@ -21,7 +21,7 @@ var asserters:{[typeName:string]:(pojo:any, allowUndefined?:boolean) => void} = 
 
 export interface generatedModels
 {
-    /*__each__ tables */ __tableNameSingularCamel__:types.__tableName__Model;
+    /*__each__ tables */ __tableNameSingular__:types.__tableNameSingular__Model;
 }
 
 /*__startEach__ tables */
@@ -29,7 +29,7 @@ export interface generatedModels
 //////////////////////////////////////////////////////////////////////////////
 //
 //
-//               __tableName__
+//               __tableNameCamel__
 //
 //
 //////////////////////////////////////////////////////////////////////////////
@@ -42,9 +42,9 @@ export interface __tableNameSingular__Pojo
 
 export interface __tableNameSingular__Instance extends sequelize.Instance<__tableNameSingular__Instance>, __tableNameSingular__Pojo { }
 
-export interface __tableName__Model extends sequelize.Model<__tableNameSingular__Instance, __tableNameSingular__Pojo> {
+export interface __tableNameSingular__Model extends sequelize.Model<__tableNameSingular__Instance, __tableNameSingular__Pojo> {
     get__tableNameSingular__(__idFieldName__: number):Promise<__tableNameSingular__Instance>;
-    get__tableNameSingular__(__tableNameSingularCamel__:__tableNameSingular__Pojo):Promise<__tableNameSingular__Instance>;
+    get__tableNameSingular__(__tableNameSingular__:__tableNameSingular__Pojo):Promise<__tableNameSingular__Instance>;
 }
 
 export function assertValid__tableNameSingular__(pojo:__tableNameSingular__Pojo, allowUndefined?:boolean):void {

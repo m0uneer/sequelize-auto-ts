@@ -21,8 +21,8 @@ export class Models {
 
     public SEQUELIZE:sequelize.Sequelize;
 
-    /*__each__ tables */ public __tableNameCamel__:types.__tableName__Model;
-    /*__each__ tables */ public __tableName__:types.__tableName__Model;
+    /*__each__ tables */ public __tableNameCamel__:types.__tableNameSingular__Model;
+    /*__each__ tables */ public __tableName__:types.__tableNameSingular__Model;
 
     /*__ignore__*/ __primaryTableNameCamel__:sequelize.Model<any, any>;
     /*__ignore__*/ __foreignTableNameCamel__:sequelize.Model<any, any>;
@@ -36,17 +36,17 @@ export class Models {
 
         /*__startEach__ tables */
 
-        this.__tableNameCamel__ = this.__tableName__ = <types.__tableName__Model> this.SEQUELIZE.define<types.__tableNameSingular__Instance, types.__tableNameSingular__Pojo>('__tableNameSingular__', {
+        this.__tableNameCamel__ = this.__tableName__ = <types.__tableNameSingular__Model> this.SEQUELIZE.define<types.__tableNameSingular__Instance, types.__tableNameSingular__Pojo>('__tableNameSingular__', {
                 /*__each__ realDbFields, */'__fieldName__': __defineFieldType__
             },
             {
                 timestamps: false,
                 classMethods: {
-                    get__tableNameSingular__: (__tableNameSingularCamel__:any) => {
+                    get__tableNameSingular__: (__tableNameSingular__:any) => {
                         const where:{[key:string]:any} = {};
-                        const id:number = parseInt(__tableNameSingularCamel__);
+                        const id:number = parseInt(__tableNameSingular__);
                         if (isNaN(id)) {
-                            /*__each__ realDbFields */ if (__tableNameSingularCamel__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingularCamel__['__fieldName__']}
+                            /*__each__ realDbFields */ if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
                         } else {
                             where['__idFieldName__'] = id;
                         }

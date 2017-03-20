@@ -15,7 +15,7 @@ import types = require('./sequelize-types');
 const Sequelize:sequelize.SequelizeStatic = sequelize;
 
 export let initialized:boolean = false;
-export let models:types.generatedModels;
+export let models:types.GeneratedModels;
 
 export let SEQUELIZE:sequelize.Sequelize;
 
@@ -28,7 +28,7 @@ export let SEQUELIZE:sequelize.Sequelize;
 /*__ignore__*/ let __secondTableName__:sequelize.Model<any, any>;
 /*__ignore__*/ let __associationNameQuoted__:string;
 
-export function initialize(database:string, username:string, password:string, options:sequelize.Options):types.generatedModels
+export function initialize(database:string, username:string, password:string, options:sequelize.Options):types.GeneratedModels
 {
     if (initialized)
     {

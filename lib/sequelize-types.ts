@@ -19,7 +19,7 @@ import types = require('./sequelize-types'); // important so we can use same ful
 
 var asserters:{[typeName:string]:(pojo:any, allowUndefined?:boolean) => void} = {};
 
-export interface generatedModels
+export interface GeneratedModels
 {
     /*__each__ tables */ __tableNameSingular__:types.__tableNameSingular__Model;
 }

@@ -57,9 +57,9 @@ function processFromPrompt()
             targetDirectory: { description: "Target directory", required: true }
         }
     };
-    
+
     prompt.start();
-    
+
     prompt.get(schema, function(err, result)
     {
         result.options = null;

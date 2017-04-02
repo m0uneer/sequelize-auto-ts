@@ -21,7 +21,7 @@ var asserters:{[typeName:string]:(pojo:any, allowUndefined?:boolean) => void} = 
 
 export interface GeneratedModels
 {
-    /*__each__ tables */ __tableNameSingular__:types.__tableNameSingular__Model;
+    /*__each__ tables */ __tableNameCamel__:types.__tableNameSingular__Model;
 }
 
 /*__startEach__ tables */

@@ -317,6 +317,11 @@ export class Reference {
         return camelTitleCase(this.foreignTableName);
     }
 
+    public foreignTableNameRealCamel():string
+    {
+        return toCamelCase(this.foreignTableName);
+    }
+
     associationNameQuoted():string {
         return this.associationName
             ? '\'' + this.associationName + '\''

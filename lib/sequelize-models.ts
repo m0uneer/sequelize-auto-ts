@@ -27,6 +27,7 @@ export let SEQUELIZE:sequelize.Sequelize;
 /*__ignore__*/ let __firstTableName__:sequelize.Model<any, any>;
 /*__ignore__*/ let __secondTableName__:sequelize.Model<any, any>;
 /*__ignore__*/ let __associationNameQuoted__:string;
+/*__ignore__*/ let __foreignTableNameRealCamel__:string;
 
 export function initialize(database:string, username:string, password:string, options:sequelize.Options):types.GeneratedModels
 {
@@ -64,7 +65,7 @@ export function initialize(database:string, username:string, password:string, op
 
     /*__startEach__ references */
 
-    __primaryTableNameCamel__.hasMany(__foreignTableNameCamel__, {foreignKey: '__foreignKey__' });
+    __primaryTableNameCamel__.hasMany(__foreignTableNameCamel__, {as: '__foreignTableNameRealCamel__', foreignKey: '__foreignKey__' });
     __foreignTableNameCamel__.belongsTo(__primaryTableNameCamel__, {as: __associationNameQuoted__, foreignKey: '__foreignKey__' });
 
     /*__endEach__*/

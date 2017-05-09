@@ -317,6 +317,11 @@ export class Reference {
         return camelTitleCase(this.foreignTableName);
     }
 
+    public foreignTableNameRealCamel():string
+    {
+      return Sequelize.Utils.pluralize(toCamelCase(this.foreignTableName));
+    }
+
     associationNameQuoted():string {
         return this.associationName
             ? '\'' + this.associationName + '\''
@@ -594,14 +599,19 @@ export function read(database:string, username:string, password:string, options:
                 // if a one table has two foreign keys to same parent table, we end up
                 // with two arrays but Sequelize actually only supports one, so we need
                 // to make sure we only create one field in the parent table
-
                 var fieldName = util.camelCase(row.table_name);
+
+                // To support `user.createdByIssues`, `user.assignedToIssues`,... instead of being
+                // user.issues for all cases.
+                const fieldNameAlias = associationName ? row.column_name + '_' + row.table_name :
+                  row.table_name;
+
                 if (!parentTable.fields.some(f => f.fieldName === fieldName)) {
                     parentTable.fields.push(new Field(
                         fieldName,
-                        toCamelCase(row.table_name),                         // Leads
-                        toProperSingularizeCase(row.table_name) + 'Pojo[]',  // Leads -> LeadPojo[]
-                        parentTable,                                         // Accounts table reference
+                        Sequelize.Utils.pluralize(toCamelCase(fieldNameAlias)),// Leads
+                        toProperSingularizeCase(row.table_name) + 'Pojo[]',    // Leads -> LeadPojo[]
+                        parentTable,                                           // Accounts table reference
                         fieldName));
                 }
             }

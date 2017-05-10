@@ -12,6 +12,8 @@ import sequelize from 'sequelize';
 
 import types = require('./sequelize-types');
 
+/* __each__ momentJsImport */ const __name__ = require('__name__');
+
 const Sequelize:sequelize.SequelizeStatic = sequelize;
 
 export let initialized:boolean = false;

@@ -16,6 +16,10 @@ export class Schema {
 
     public static idSuffix:string = "id"; // NOTE: Must be LOWER case
     public static dbNameCase:string = "snake";
+    public static useMomentJs:boolean = true;
+
+    // For template
+    public momentJsImport:{name: string}[] = Schema.useMomentJs ? [{name: 'moment'}] : [];
 
     public references:Reference[] = [];
     public xrefs:Xref[] = [];
@@ -250,7 +254,15 @@ export class Field
     sequelizeFieldType(): string
     {
         let translated: string =
-            `{type: ${Schema.fieldTypeSequelize[this.fieldType]}, field: '${this.originalFieldName}'}`;
+            '{' +
+            `type: ${Schema.fieldTypeSequelize[this.fieldType]},`+
+            `field: '${this.originalFieldName}',` +
+            (Schema.useMomentJs && this.fieldType === 'datetime' ?
+              `get: function()  {
+                return moment(this.getDataValue('${this.fieldName}')).format('LLL');
+              },` : '') +
+            `}`;
+
 
         if (translated == undefined) {
             console.log('Unable to sequelize field type:' + this.fieldType);

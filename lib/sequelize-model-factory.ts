@@ -42,16 +42,16 @@ export class Models {
             {
                 timestamps: false,
                 classMethods: {
-                    get__tableNameSingular__: (__tableNameSingular__:any) => {
-                        const where:{[key:string]:any} = {};
-                        const id:number = parseInt(__tableNameSingular__);
-                        if (isNaN(id)) {
-                            /*__each__ realDbFields */ if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
-                        } else {
-                            where['__idFieldName__'] = id;
-                        }
-                        return self.__tableNameCamel__.find({where: where});
-                    }
+                    // get__tableNameSingular__: (__tableNameSingular__:any) => {
+                    //     const where:{[key:string]:any} = {};
+                    //     const id:number = parseInt(__tableNameSingular__);
+                    //     if (isNaN(id)) {
+                             /*__each__ realDbFields */ // if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
+                    //     } else {
+                    //         where['__idFieldName__'] = id;
+                    //     }
+                    //     return self.__tableNameCamel__.find({where: where});
+                    // }
                 }
             });
         /*__endEach__*/

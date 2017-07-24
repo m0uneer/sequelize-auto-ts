@@ -41,7 +41,9 @@ function processFromCommandLines()
         password: args[2],
         targetDirectory: args[3],
         modelFactory: modelFactory,
-        options: null
+        options: {
+          dialect: 'mysql',
+        }
     };
 
     generate(options);

@@ -71,7 +71,8 @@ export class Schema {
         "enum": "string",
         "set": "string",
         time: "string",
-        geometry: "string"
+        geometry: "string",
+        json: "{[p: string]: any}"
     };
 
     public static fieldTypeSequelize:util.Dictionary<string> = {
@@ -109,7 +110,8 @@ export class Schema {
         'enum': 'Sequelize.STRING',
         set: 'Sequelize.STRING',
         time: 'Sequelize.STRING',
-        geometry: 'Sequelize.STRING'
+        geometry: 'Sequelize.STRING',
+        json: 'Sequelize.JSON'
     };
 
     public uniqueReferences():Reference[] {
@@ -145,6 +147,7 @@ export class Schema {
             foundIds[pk.fieldName] = true;
 
             const r:Reference = new Reference(
+                table.tableName,
                 table.tableName,
                 table.tableName,
                 undefined,
@@ -190,26 +193,33 @@ export class Table
     public realDbFields():Field[] {
         return this.fields.filter(f => !f.referencedCol && !f.isCalculated);
     }
-    idField():Field {
-        return _.find(this.fields, f => f.isIdField());
+
+    idFields():Field[] {
+        return _.filter(this.fields, f => f.isIdField());
     }
 
-    idFieldName():string {
-        const idField:Field = this.idField();
-        if (idField === undefined) {
+    idFieldNames():string[] {
+        const idFields = this.idFields();
+        return idFields.map(idField => {
+          if (idField === undefined) {
             console.log('Unable to find ID field for type: ' + this.tableName);
             return '!!cannotFindIdFieldOn' + this.tableName + '!!';
-        }
-        return idField.fieldName;
+          }
+
+          return idField.fieldName;
+        });
     }
 
-    idFieldNameTitleCase():string {
-        const idField:Field = this.idField();
-        if (idField === undefined) {
+    idFieldNamesTitleCase():string[] {
+        const idFields = this.idFields();
+        return idFields.map(idField => {
+          if (idField === undefined) {
             console.log('Unable to find ID field for type: ' + this.tableName);
             return '!!cannotFindIdFieldOn' + this.tableName + '!!';
-        }
-        return idField.fieldNameProperCase();
+          }
+
+          return idField.fieldNameProperCase();
+        });
     }
 }
 
@@ -217,7 +227,14 @@ export class Field
 {
     public targetIdFieldType:string; // if this is a prefixed foreign key, then the name of the non-prefixed key is here
 
-    constructor(public originalFieldName:string, public fieldName:string, public fieldType:string, public table:Table, public referencedCol:string | Boolean = false, public isCalculated:boolean = false)
+    constructor(
+      public originalFieldName:string,
+      public fieldName:string,
+      public fieldType:string,
+      public table:Table,
+      public isPrimaryKey:boolean,
+      public referencedCol:string | Boolean = false,
+      public isCalculated:boolean = false)
     {
 
     }
@@ -284,9 +301,12 @@ export class Field
     }
 
     defineFieldType():string {
-        if ( this == this.table.fields[0]) {
-            const originalFieldName = this.table.fields[0].originalFieldName;
+        if (this.isPrimaryKey && this == this.table.fields[0]) {
+            const originalFieldName = this.originalFieldName;
             return `{type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true, field: '${originalFieldName}'}`;
+        } else if (this.isPrimaryKey ) {
+          const originalFieldName = this.originalFieldName;
+          return `{type: Sequelize.INTEGER, primaryKey: true, field: '${originalFieldName}'}`;
         } else if (this.table.tableName.substr(0,4) == 'Xref' && this == this.table.fields[1]) {
             const originalFieldName = this.table.fields[1].originalFieldName;
             return `{type: 'number', primaryKey: true, field: '${originalFieldName}'}`;
@@ -309,6 +329,7 @@ export class Reference {
 
     constructor(public primaryTableName:string,
                 public foreignTableName:string,
+                public antiCollisionAssociationName:string,
                 public associationName:string,
                 public primaryKey:string,
                 public foreignKey:string,
@@ -329,9 +350,9 @@ export class Reference {
         return camelTitleCase(this.foreignTableName);
     }
 
-    public foreignTableNameRealCamel():string
+    public antiCollisionAssociationNameCamel():string
     {
-      return Sequelize.Utils.pluralize(toCamelCase(this.foreignTableName));
+      return Sequelize.Utils.pluralize(toCamelCase(this.antiCollisionAssociationName));
     }
 
     associationNameQuoted():string {
@@ -376,6 +397,7 @@ interface ColumnDefinitionRow
     column_name:string;
     data_type:string;
     ordinal_position:number;
+    column_key: string;
 }
 
 interface ReferenceDefinitionRow
@@ -402,7 +424,7 @@ export function read(database:string, username:string, password:string, options:
     const idFieldLookup:util.Dictionary<boolean> = {};
 
     const sql:string =
-        "select table_name, column_name, data_type, ordinal_position " +
+        "select table_name, column_name, data_type, ordinal_position, column_key " +
         "from information_schema.columns " +
         "where table_schema = '" + database + "' " +
         "order by table_name, ordinal_position";
@@ -452,6 +474,7 @@ export function read(database:string, username:string, password:string, options:
                 callback(err, null);
                 return;
             });
+
         function processCustomFields(customFields:CustomFieldDefinitionRow[]):void {
             const customFieldLookup:util.Dictionary<ColumnDefinitionRow> =
                 util.arrayToDictionary(customFields,'column_name');
@@ -508,8 +531,10 @@ export function read(database:string, username:string, password:string, options:
                 toCamelCase(row.column_name),
                 row.data_type,
                 table,
+                !!row.column_key,
                 false,
-                isCalculated);
+                isCalculated,
+            );
             table.fields.push(field);
 
             if (isCalculated && !calculatedFieldsFound[field.fieldName]) {
@@ -624,6 +649,7 @@ export function read(database:string, username:string, password:string, options:
                         Sequelize.Utils.pluralize(toCamelCase(fieldNameAlias)),// Leads
                         toProperSingularizeCase(row.table_name) + 'Pojo[]',    // Leads -> LeadPojo[]
                         parentTable,                                           // Accounts table reference
+                        false,
                         fieldName));
                 }
             }
@@ -637,12 +663,31 @@ export function read(database:string, username:string, password:string, options:
                         : associationName)),                                    // ownerUserId -> OwnerUsers -> ownerUser
                 toProperSingularizeCase(row.referenced_table_name) + 'Pojo',    // Accounts -> AccountPojo
                 childTable,
+                false,
                 true));
 
-            // tell Sequelize about the reference
-            schema.references.push(new Reference(
+            // Tell Sequelize about the reference:
+            //  - Handle association name collisions
+            let antiCollisionAssociationName: string;
+            const collidedRefs = schema.references
+              .filter(ref => ref.primaryTableName === row.referenced_table_name &&
+              ref.foreignTableName === row.table_name);
+
+            if (collidedRefs.length) {
+              // There is a collision, rename all collided references
+              collidedRefs.map(ref => {
+                ref.antiCollisionAssociationName = ref.foreignKey + '_' + ref.foreignTableName;
+              });
+
+              // Set antiCollisionAssociationName
+              antiCollisionAssociationName = row.column_name + '_' + row.table_name;
+            } else {
+              antiCollisionAssociationName = row.table_name;
+            }
+          schema.references.push(new Reference(
                 row.referenced_table_name,
                 row.table_name,
+                antiCollisionAssociationName,
                 toCamelCase(singularize(associationName === undefined
                     ? row.referenced_table_name                             // Accounts -> account
                     : associationName)),
@@ -831,16 +876,21 @@ export function read(database:string, username:string, password:string, options:
                 continue;
             }
 
-            const field:Field = table.fields[0];
-            const fieldName:string = field.fieldName;
+            table.fields.forEach(field => {
+              if (!field.isPrimaryKey) {
+                return;
+              }
 
-            if (!idFieldLookup[fieldName] &&
+              const fieldName:string = field.fieldName;
+
+              if (!idFieldLookup[fieldName] &&
                 fieldName.length > idSuffixLen &&
                 fieldName.substr(fieldName.length - idSuffixLen, idSuffixLen).toLocaleLowerCase() == idSuffix)
-            {
+              {
                 idFields.push(field);
                 idFieldLookup[fieldName] = true;
-            }
+              }
+            });
         }
 
         schema.idFields = idFields;

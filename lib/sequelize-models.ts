@@ -8,30 +8,30 @@
 //
 ////////////////////////////////////////////////////////////////////
 
-import sequelize from 'sequelize';
+import * as Sequelize from 'sequelize';
+import * as cls from 'continuation-local-storage';
+const djatyNS = cls.createNamespace('djaty-cls-djatyNS');
 
 import types = require('./sequelize-types');
 
 /* __each__ momentJsImport */ const __name__ = require('__name__');
 
-const Sequelize:sequelize.SequelizeStatic = sequelize;
-
 export let initialized:boolean = false;
 export let models:types.GeneratedModels;
 
-export let SEQUELIZE:sequelize.Sequelize;
+export let SEQUELIZE:Sequelize.Sequelize;
 
 /*__each__ tables */ export let __tableNameCamel__:types.__tableNameSingular__Model;
 
 /*__ignore__*/ let __defineFieldType__;
-/*__ignore__*/ let __primaryTableNameCamel__:sequelize.Model<any, any>;
-/*__ignore__*/ let __foreignTableNameCamel__:sequelize.Model<any, any>;
-/*__ignore__*/ let __firstTableName__:sequelize.Model<any, any>;
-/*__ignore__*/ let __secondTableName__:sequelize.Model<any, any>;
+/*__ignore__*/ let __primaryTableNameCamel__:Sequelize.Model<any, any>;
+/*__ignore__*/ let __foreignTableNameCamel__:Sequelize.Model<any, any>;
+/*__ignore__*/ let __firstTableName__:Sequelize.Model<any, any>;
+/*__ignore__*/ let __secondTableName__:Sequelize.Model<any, any>;
 /*__ignore__*/ let __associationNameQuoted__:string;
 /*__ignore__*/ let __foreignTableNameRealCamel__:string;
 
-export function initialize(database:string, username:string, password:string, options:sequelize.Options):types.GeneratedModels
+export function initialize(database:string, username:string, password:string, options:Sequelize.Options):types.GeneratedModels
 {
     if (initialized)
     {
@@ -40,6 +40,7 @@ export function initialize(database:string, username:string, password:string, op
 
     initialized = true;
 
+    (<{useCLS: (ns: any) => any} & Sequelize.SequelizeStatic> Sequelize).useCLS(djatyNS);
     SEQUELIZE = new Sequelize(database, username, password, options);
 
     /*__startEach__ tables */
@@ -51,23 +52,23 @@ export function initialize(database:string, username:string, password:string, op
             timestamps: false,
             freezeTableName: true,
             classMethods: {
-                get__tableNameSingular__:(__tableNameSingular__:any) => {
-                    const where:{[key:string]:any} = {};
-                    const id:number = parseInt(__tableNameSingular__);
-                    if (isNaN(id)) {
-                        /*__each__ realDbFields */ if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
-                    } else {
-                        where['__idFieldName__'] = id;
-                    }
-                    return __tableNameCamel__.find({where: where});
-                }
+                // get__tableNameSingular__:(__tableNameSingular__:any) => {
+                //     const where:{[key:string]:any} = {};
+                //     const id:number = parseInt(__tableNameSingular__);
+                //     if (isNaN(id)) {
+                         /*__each__ realDbFields */ // if (__tableNameSingular__['__fieldName__'] !== undefined) { where['__fieldName__'] = __tableNameSingular__['__fieldName__']}
+                //     } else {
+                //         where['__idFieldName__'] = id;
+                //     }
+                //     return __tableNameCamel__.find({where: where});
+                // }
             }
         });
     /*__endEach__*/
 
     /*__startEach__ references */
 
-    __primaryTableNameCamel__.hasMany(__foreignTableNameCamel__, {as: '__foreignTableNameRealCamel__', foreignKey: '__foreignKey__' });
+    __primaryTableNameCamel__.hasMany(__foreignTableNameCamel__, {as: '__antiCollisionAssociationNameCamel__', foreignKey: '__foreignKey__' });
     __foreignTableNameCamel__.belongsTo(__primaryTableNameCamel__, {as: __associationNameQuoted__, foreignKey: '__foreignKey__' });
 
     /*__endEach__*/

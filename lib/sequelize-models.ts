@@ -12,6 +12,9 @@ import * as Sequelize from 'sequelize';
 import * as cls from 'continuation-local-storage';
 const djatyNS = cls.createNamespace('djaty-cls-djatyNS');
 
+const patchIt = require('cls-domains-promise');
+patchIt(djatyNS, Promise.prototype);
+
 import types = require('./sequelize-types');
 
 /* __each__ momentJsImport */ const __name__ = require('__name__');

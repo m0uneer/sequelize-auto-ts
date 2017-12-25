@@ -1,10 +1,10 @@
 import generator = require("./sequelize-auto-ts");
 import fs = require("fs");
-var prompt = require("prompt");
+const prompt = require("prompt");
 
 console.log("sequelize-auto-ts");
 console.log("");
-console.log("Automatically generate sequelize definition statements and TypeScript types for your database.")
+console.log("Automatically generate sequelize definition statements and TypeScript types for your database.");
 console.log("");
 
 if (process.argv.length > 2)
@@ -18,10 +18,10 @@ else
 
 function processFromCommandLines()
 {
-    var args:Array<string> = process.argv.slice(2);
-    var modelFactory:boolean = false;
+    const args:Array<string> = process.argv.slice(2);
+    let modelFactory:boolean = false;
 
-    var i = args.indexOf('-mf');
+    const i = args.indexOf('-mf');
     if (i !== -1) {
         modelFactory = true;
         args.splice(i, 1);
@@ -34,7 +34,7 @@ function processFromCommandLines()
     }
 
 
-    var options:generator.GenerateOptions =
+    const options:generator.GenerateOptions =
     {
         database: args[0],
         username: args[1],
@@ -51,7 +51,7 @@ function processFromCommandLines()
 
 function processFromPrompt()
 {
-    var schema = {
+    const schema = {
         properties: {
             database: { description: "Database name", required: true },
             username: { description: "Username", required: true },
@@ -89,6 +89,8 @@ function generate(options:generator.GenerateOptions):void
         {
             throw err;
         }
+
+      process.exit(1);
     });
 }
 

@@ -17,8 +17,6 @@ patchIt(djatyNS, Promise.prototype);
 
 import types = require('./sequelize-types');
 
-/* __each__ momentJsImport */ const __name__ = require('__name__');
-
 export let initialized:boolean = false;
 export let models:types.GeneratedModels;
 

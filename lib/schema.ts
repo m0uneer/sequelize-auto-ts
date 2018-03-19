@@ -16,11 +16,8 @@ export class Schema {
 
     public static idSuffix:string = "id"; // NOTE: Must be LOWER case
     public static dbNameCase:string = "snake";
-    public static useMomentJs:boolean = true;
 
     // For template
-    public momentJsImport:{name: string}[] = Schema.useMomentJs ? [{name: 'moment'}] : [];
-
     public references:Reference[] = [];
     public xrefs:Xref[] = [];
     public associations:Association[] = [];
@@ -50,9 +47,9 @@ export class Schema {
         double: "number",
         decimal: "number",
 
-        timestamp: "Date",
-        date: "Date",
-        datetime: "Date",
+        timestamp: "number",
+        date: "string",
+        datetime: "string",
 
         tinyblob: "Buffer",
         mediumblob: "Buffer",
@@ -274,10 +271,6 @@ export class Field
             '{' +
             `type: ${Schema.fieldTypeSequelize[this.fieldType]},`+
             `field: '${this.originalFieldName}',` +
-            (Schema.useMomentJs && this.fieldType === 'datetime' ?
-              `get: function()  {
-                return moment(this.getDataValue('${this.fieldName}')).format('LLL');
-              },` : '') +
             `}`;
 
 

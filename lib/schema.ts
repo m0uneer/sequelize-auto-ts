@@ -48,8 +48,8 @@ export class Schema {
         decimal: "number",
 
         timestamp: "number",
-        date: "string",
-        datetime: "string",
+        date: "Date",
+        datetime: "Date",
 
         tinyblob: "Buffer",
         mediumblob: "Buffer",
